@@ -20,8 +20,21 @@ from skimage.transform import resize
 import sys
 from skimage.transform import resize
 import numpy as np
+import util
+import time
+import redis
+import json
 #reload(sys)
 #sys.setdefaultencoding("utf-8")
+def getMilliseconds():
+	timestamp_milli = int(round(time.time() * 1000))
+	return timestamp_milli
+def is_running_in_docker():
+    # Docker crea un archivo .dockerenv en la raíz del sistema de archivos del contenedor.
+    # La presencia de este archivo puede ser un buen indicador.
+    path = "/.dockerenv"
+    return os.path.exists(path)
+
 np.random.seed(1234)
 def mamon_videoFightModel2(tf,wight='mamonbest947oscombo.h5'):
     layers = tf.keras.layers
@@ -70,7 +83,39 @@ def mamon_videoFightModel2(tf,wight='mamonbest947oscombo.h5'):
 model = mamon_videoFightModel2(tf)
 
 
-cap = cv2.VideoCapture("rtsp://190.84.115.70:8554/10-f976ab6a-a425-4507-b013-a64f71d8fc45/1")
+
+
+if is_running_in_docker():
+    ConfParams = util.getConfigs('/opt/alice-lpr-cpu/config.json',True)
+else:
+    ConfParams = util.getConfigs('./config.json')
+
+    if ConfParams:
+        print(ConfParams)
+            # Parse the JSON string into a dictionary
+    try:
+        conf_dict = json.loads(ConfParams)
+        #device = Device(conf_dict,util.send_video)
+        vid_path = conf_dict['vid_path']
+        model_path = conf_dict['model']#it replaced the args.model
+        architecture_type = conf_dict['architecture_type']#it replaced the args.model
+        debug = conf_dict['debug']
+        ip_redis = conf_dict['ip_redis']
+        port_redis = conf_dict['port_redis']
+        device_id = conf_dict['device_id']
+        country = conf_dict['country']
+        devicearg  = conf_dict['device']
+        ocr_grcp_ip = conf_dict['ocr_grcp_ip']
+        ocr_grcp_port = conf_dict['ocr_grcp_port']
+        ocr_grcp        = conf_dict['ocr_grcp']
+        ocr_http =  conf_dict['ocr_http']
+    except json.JSONDecodeError:
+        print("Error: Failed to parse the configuration parameters.")
+    except KeyError:
+        print("Error: 'vid_path' not found in the configuration parameters.")
+    connect_redis= redis.Redis(host=ip_redis, port=port_redis)
+
+cap = cv2.VideoCapture(vid_path)
 i = 0
 frames = np.zeros((30, 160, 160, 3), dtype=np.float)
 old = []
@@ -95,6 +140,16 @@ while True:
         # Perform actions based on the prediction
 
         if predaction[0] == True:
+            data_out  = {
+	            "host_id": device_id,
+	            "unix_itme_stamp": getMilliseconds(),
+	            "fps": "10",
+	            "resolution_x": "160",
+	            "resolution_y": "160",
+	            "analytics_results": "fight_detection",
+	            "analityc_type": "",
+	            "event_type": ""
+	            	}
             cv2.putText(frame,
                         'Violence Detected... Violence.. violence',
                         (50, 50),
@@ -118,6 +173,7 @@ while True:
     else:
         # Check if frame is not None before processing
         if frame is not None:
+            util.send_video(frame,connect_redis,device_id)
             frm = resize(frame, (160, 160, 3))
             old.append(frame)
             fshape = frame.shape

@@ -7,6 +7,7 @@ python3.6 -m venv venv_fight_3.6
 python3.6 -m pip install  testresources
 ##still tensor flow is not necesary cause it is not running on gpu 
 python3.6  -m pip install tensorflow-gpu==2.0.0
+python3.6 -m pip install redis
 python3.6 -m pip install --upgrade pillow
 python3.6 -m pip install keras==2.3.1
 python3.6 -m pip install  'h5py==2.10.0' --force-reinstall
