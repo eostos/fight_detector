@@ -70,7 +70,7 @@ def mamon_videoFightModel2(tf,wight='mamonbest947oscombo.h5'):
 model = mamon_videoFightModel2(tf)
 
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture("rtsp://190.84.115.70:8554/10-f976ab6a-a425-4507-b013-a64f71d8fc45/1")
 i = 0
 frames = np.zeros((30, 160, 160, 3), dtype=np.float)
 old = []
@@ -102,14 +102,14 @@ while True:
                         (0, 255, 255),
                         2,
                         cv2.LINE_4)
-            cv2.imshow('video2', frame)
-            cv2.waitKey(1)
+ #           cv2.imshow('video2', frame)
+ #           cv2.waitKey(1)
             print('Violence detected here...')
-            #fourcc = cv2.VideoWriter_fourcc(*'XVID')
-            #vio = cv2.VideoWriter(f"./videos/output-{j}.avi", fourcc, 10.0, (fwidth, fheight))
-            #for frameinss in old:
-            #    vio.write(frameinss)
-            #vio.release()
+            fourcc = cv2.VideoWriter_fourcc(*'XVID')
+            vio = cv2.VideoWriter(f"./videos/output-{j}.avi", fourcc, 10.0, (fwidth, fheight))
+            for frameinss in old:
+                vio.write(frameinss)
+            vio.release()
 
         i = 0
         j += 1
@@ -131,10 +131,10 @@ while True:
 
             i += 1
 
-    cv2.imshow('video', frame)
+#    cv2.imshow('video', frame)
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+#    if cv2.waitKey(1) & 0xFF == ord('q'):
+#        break
 
 #cap.release()
 #cv2.destroyAllWindows()
