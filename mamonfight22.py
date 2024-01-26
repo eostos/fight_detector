@@ -108,6 +108,7 @@ def mamon_videoFightModel2(tf,wight='mamonbest947oscombo.h5'):
 
 def pred_fight(model,video,acuracy=0.9):
     pred_test = model.predict(video)
+    print(pred_test)
     if pred_test[0][1] >=acuracy:
         return True , pred_test[0][1]
     else:

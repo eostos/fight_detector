@@ -82,17 +82,15 @@ def mamon_videoFightModel2(tf,wight='mamonbest947oscombo.h5'):
 #### import cv2
 model = mamon_videoFightModel2(tf)
 
-
-
-
 if is_running_in_docker():
-    ConfParams = util.getConfigs('/opt/alice-lpr-cpu/config.json',True)
+    ConfParams = util.getConfigs('/opt/config.json',True)
+    print(ConfParams)
 else:
     ConfParams = util.getConfigs('./config.json')
-
-    if ConfParams:
-        print(ConfParams)
-            # Parse the JSON string into a dictionary
+    
+if ConfParams:
+    print(ConfParams)
+    # Parse the JSON string into a dictionary
     try:
         conf_dict = json.loads(ConfParams)
         #device = Device(conf_dict,util.send_video)
@@ -113,6 +111,7 @@ else:
         print("Error: Failed to parse the configuration parameters.")
     except KeyError:
         print("Error: 'vid_path' not found in the configuration parameters.")
+
     connect_redis= redis.Redis(host=ip_redis, port=port_redis)
 
 cap = cv2.VideoCapture(vid_path)
@@ -120,13 +119,21 @@ i = 0
 frames = np.zeros((30, 160, 160, 3), dtype=np.float)
 old = []
 j = 0
-
+people_actions= []
+person_out={
+   "tracker_id":"tasdqweasdfsd234234",
+   "action": "hands_up",   
+   "prob"      : 1.0,
+   "frames": "4"
+    }
+people_actions.append(person_out)
 while True:
     ret, frame = cap.read()
 
     if not ret:
         print("no frame ****")
         break  # Break if there are no more frames
+    util.send_video(frame,connect_redis,device_id)
         
 
     font = cv2.FONT_HERSHEY_SIMPLEX
@@ -140,16 +147,21 @@ while True:
         # Perform actions based on the prediction
 
         if predaction[0] == True:
+
+
+
             data_out  = {
 	            "host_id": device_id,
 	            "unix_itme_stamp": getMilliseconds(),
 	            "fps": "10",
 	            "resolution_x": "160",
 	            "resolution_y": "160",
-	            "analytics_results": "fight_detection",
+	            "analytics_results": people_actions,
 	            "analityc_type": "",
 	            "event_type": ""
 	            	}
+            print(data_out)
+            connect_redis.publish("action_data_"+device_id, json.dumps(data_out)) 
             cv2.putText(frame,
                         'Violence Detected... Violence.. violence',
                         (50, 50),
@@ -173,7 +185,6 @@ while True:
     else:
         # Check if frame is not None before processing
         if frame is not None:
-            util.send_video(frame,connect_redis,device_id)
             frm = resize(frame, (160, 160, 3))
             old.append(frame)
             fshape = frame.shape
@@ -194,3 +205,4 @@ while True:
 
 #cap.release()
 #cv2.destroyAllWindows()
+

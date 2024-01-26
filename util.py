@@ -30,14 +30,18 @@ def send_video(image, connect_redis,device_id):
     # Resize the image to 320x240
     resized_image = cv2.resize(image, (320, 240))
     # Crop the bottom half of the image
-    H = resized_image.shape[0]
-    displ = resized_image[H//2:H, :, :]
+    #H = resized_image.shape[0]
+    #displ = resized_image[H//2:H, :, :]
     # Convert image to JPEG format
     jpg_string = cv2.imencode('.jpg', resized_image)[1]
     # Encode the image in base64
-    encoded_string = base64.b64encode(jpg_string)
+    encoded_string = base64.b64encode(jpg_string).decode('utf-8')
     # Publish to Redis
-    connect_redis.publish("objects_streaming_"+device_id, encoded_string)
+#    print("channel_videofordisplay"+device_id)
+    data_to_send={"videoFrame": encoded_string }
+    connect_redis.publish("channel_videofordisplay"+device_id,json.dumps(data_to_send))
+
+    #connect_redis.publish("channel_videofordisplay"+device_id,data_to_send)
 
 def write_csv(results, output_path):
     """
@@ -183,14 +187,15 @@ def get_car(license_plate, vehicle_track_ids):
 def getConfigs(file_path, is_docker=False):
     try:
         # Check if the file exists
+        print(file_path,"file pathhhhh")
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"The file at {file_path} does not exist.")
 
-        with open(file_path, 'r') as file:
-            data = json.load(file)
-            
-            if is_docker:
-                data = data[0]['params'][0]
+        with open(file_path, 'r', encoding='utf-8') as file:
+            print(file,"************")
+            data = json.load(file)            
+            #if is_docker:
+            #    data = data[0]['params'][0]
 
             # Extracting fields
             manager_id = data['manager_id']
